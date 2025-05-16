@@ -10,6 +10,31 @@ noncomputable section
 section ForOther
 open CategoryTheory NaturalModelBase Opposite Grothendieck.Groupoidal
 
+-- TODO (for JH) move to Grothendieck.Groupoidal.Basic (after refactor)
+namespace CategoryTheory.Grothendieck.Groupoidal
+variable {Γ : Type u₃}{Δ : Type u₃} [Groupoid.{v₃} Γ][Groupoid.{v₃} Δ] (σ : Δ ⥤ Γ)
+
+lemma hom_of_map_eq_eqToHom {F G : Γ ⥤ Grpd} (h : F = G) :
+    eqToHom (by rw [h]) = Grpd.homOf (map (eqToHom h)) := by
+  subst h
+  fapply CategoryTheory.Functor.ext
+  · intro x
+    apply Grothendieck.Groupoidal.obj_ext_hEq
+    · simp [Grpd.eqToHom_obj]
+    · simp
+  · intro x y f
+    rw! [Grothendieck.Groupoidal.map_id_eq]
+    simp
+
+lemma pre_congr_functor {F G : Γ ⥤ Grpd} (h : F = G) :
+  map (eqToHom (by rw[← h])) ⋙ pre F σ ⋙ map (eqToHom h) =
+  pre G σ := by
+  subst h
+  simp only [eqToHom_refl, map_id_eq]
+  exact rfl
+
+end CategoryTheory.Grothendieck.Groupoidal
+
 end ForOther
 
 -- NOTE these simp lemmas from mathlib should maybe be removed
@@ -162,29 +187,7 @@ theorem sigmaMap_comp : sigmaMap B (f ≫ g) = sigmaMap B f ⋙ sigmaMap B g := 
 
 variable (B) {Δ : Type u₃} [Category.{v₃} Δ] (σ : Δ ⥤ Γ)
 
-section
-variable {Γ : Type u₃}{Δ : Type u₃} [Groupoid.{v₃} Γ][Groupoid.{v₃} Δ] (σ : Δ ⥤ Γ)
 
-lemma hom_of_map_eq_eqToHom {F G : Γ ⥤ Grpd} (h : F = G) :
-    eqToHom (by rw [h]) = Grpd.homOf (map (eqToHom h)) := by
-  subst h
-  fapply CategoryTheory.Functor.ext
-  · intro x
-    apply Grothendieck.Groupoidal.obj_ext_hEq
-    · simp [Grpd.eqToHom_obj]
-    · simp
-  · intro x y f
-    rw! [Grothendieck.Groupoidal.map_id_eq]
-    simp
-
-lemma pre_functionality {F G : Γ ⥤ Grpd} (h : F = G) :
-  map (eqToHom (by rw[← h])) ⋙ Grothendieck.Groupoidal.pre F σ ⋙ map (eqToHom h) =
-  Grothendieck.Groupoidal.pre G σ := by
-  subst h
-  simp only [eqToHom_refl, map_id_eq]
-  exact rfl
-
-end
 
 
 theorem sigma_naturality_aux (x) :
@@ -220,21 +223,14 @@ theorem sigma_naturality : σ ⋙ sigma A B = sigma (σ ⋙ A) (pre A σ ⋙ B) 
     dsimp [Grpd.homOf, sigmaMap, ← Functor.assoc]
     erw [← Grothendieck.Groupoidal.map_comp_eq]
     rw [whiskerRight_ιNatTrans_naturality]
-    simp
+    simp only [Functor.comp_obj, Functor.comp_map, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
     erw [Grothendieck.Groupoidal.map_comp_eq]
-    dsimp[Functor.assoc]
-    calc
-      map (whiskerRight (ιNatTrans (σ.map f)) B) ⋙ Grothendieck.Groupoidal.pre (ι A (σ.obj y) ⋙ B) (A.map (σ.map f)) =
-      map (whiskerRight (ιNatTrans (σ.map f)) B) ⋙ (map (eqToHom _) ⋙ Grothendieck.Groupoidal.pre (ι (σ ⋙ A) y ⋙ Grothendieck.Groupoidal.pre A σ ⋙ B) (A.map (σ.map f)) ⋙
-        map (eqToHom _)) := by
-        have : pre (ι A (σ.obj y) ⋙ B) (A.map (σ.map f)) = map (eqToHom (by rw[← (sigma_naturality_aux B σ y)])) ⋙ pre (ι (σ ⋙ A) y ⋙ pre A σ ⋙ B) (A.map (σ.map f)) ⋙
-                map (eqToHom (sigma_naturality_aux B σ y))  := by
-                apply Eq.symm
-                apply pre_functionality
-        rw[this]
-      _ = map (whiskerRight (ιNatTrans (σ.map f)) B) ⋙ map (eqToHom _) ⋙
-      Grothendieck.Groupoidal.pre (ι (σ ⋙ A) y ⋙ Grothendieck.Groupoidal.pre A σ ⋙ B) (A.map (σ.map f)) ⋙
-        map (eqToHom _) := by simp
+    dsimp [Functor.assoc]
+    have : pre (ι A (σ.obj y) ⋙ B) (A.map (σ.map f)) = map (eqToHom (by rw[← (sigma_naturality_aux B σ y)])) ⋙ pre (ι (σ ⋙ A) y ⋙ pre A σ ⋙ B) (A.map (σ.map f)) ⋙
+        map (eqToHom (sigma_naturality_aux B σ y))  := by
+            apply Eq.symm
+            apply pre_congr_functor
+    rw [this]
 
 end
 
