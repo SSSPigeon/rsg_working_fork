@@ -52,9 +52,9 @@ def sigmaMap : sigmaObj B x ⥤ sigmaObj B y :=
 variable {B}
 
 @[simp] theorem sigmaMap_id_obj {p} : (sigmaMap B (𝟙 x)).obj p = p := by
-  simp only [sigmaMap, Functor.comp_obj, map_obj, Functor.id_obj]
+  simp only [sigmaMap, Functor.comp_obj, Functor.id_obj]
   apply obj_ext_hEq
-  · rw [pre_obj_base, Grpd.map_id_obj]
+  · simp
   · simp
 
 @[simp] theorem sigmaMap_id_map {p1 p2} (f : p1 ⟶ p2) :
@@ -120,7 +120,7 @@ variable {z : Γ} {f} {g : y ⟶ z}
       -- NOTE with rw this will timeout
       rw! [map_map_fiber]
       -- simp only [eqToHom_trans_assoc]
-      simp only [Functor.comp_obj, map_obj, whiskerRight_app, Functor.comp_map,
+      simp only [Functor.comp_obj, whiskerRight_app, Functor.comp_map,
         pre_map_base, map_map_base]
       -- NOTE not sure what some of these simp lemmas are doing,
       -- but when present, rw! [h] works
@@ -134,8 +134,8 @@ variable {z : Γ} {f} {g : y ⟶ z}
       eqToHom_comp_heq_iff, comp_eqToHom_heq_iff,
       heq_comp_eqToHom_iff, cast_heq_iff_heq]
     simp only [Functor.comp_obj, id_eq, pre_obj_base, Grpd.comp_eq_comp,
-      map_obj, whiskerRight_app, Functor.comp_map, heq_cast_iff_heq,
-      heq_eqToHom_comp_iff, heq_eq_eq]
+      whiskerRight_app, Functor.comp_map, heq_cast_iff_heq,
+      heq_eqToHom_comp_iff, heq_eq_eq, map_obj_base]
   · simp
 
 theorem sigmaMap_comp : sigmaMap B (f ≫ g) = sigmaMap B f ⋙ sigmaMap B g := by
@@ -247,6 +247,14 @@ variable {Γ : Type u₂} [Category.{v₂} Γ] {α β : Γ ⥤ PGrpd.{v₁,u₁}
 def pairSectionObjFiber (x : Γ) : (sigma (α ⋙ forgetToGrpd) B).obj x :=
   objMk (objPt α x) (objPt' h x)
 
+@[simp] theorem pairSectionObjFiber_base (x : Γ) :
+    (pairSectionObjFiber h x).base = objPt α x :=
+  rfl
+
+@[simp] theorem pairSectionObjFiber_fiber (x : Γ) :
+    (pairSectionObjFiber h x).fiber = objPt' h x :=
+  rfl
+
 /-- `pairSection` takes `x : Γ` and returns a triple
   ⟨ x , a , b ⟩ in the Groupoidal Grothendieck construction,
   which should be thought of as `(x : Γ) × ((a : A x) × (b : B a))`.
@@ -303,12 +311,10 @@ theorem pairSectionMap_aux_aux {x y} (f : x ⟶ y) :
 theorem pairSectionMap_aux {x y} (f : x ⟶ y) :
     ((ι _ y ⋙ B).map (mapPoint α f)).obj (mapPairSectionObjFiber h f).fiber =
     ((sec _ α rfl ⋙ B).map f).obj (objPt' h x) := by
-  simp only [Functor.comp_obj, Grpd.forgetToCat.eq_1, sigma, sigmaObj,
-    Functor.comp_map, sigmaMap, forgetToGrpd_map, id_eq, map_obj,
-    whiskerRight_app, pre_obj_base, pre_obj_fiber,
-    mapPairSectionObjFiber]
-  rw [← Grpd.map_comp_obj, pairSectionMap_aux_aux]
-  rfl
+  simp only [Functor.comp_obj, Functor.comp_map,
+    mapPairSectionObjFiber, sigmaObj, sigmaMap,
+    pre_obj_fiber, map_obj_fiber, whiskerRight_app,
+    ← Grpd.map_comp_obj, pairSectionMap_aux_aux, pairSectionObjFiber_fiber]
 
 /--
 This can be thought of as the action of parallel transport on f
@@ -331,6 +337,10 @@ def pairSectionMapFiber {x y : Γ} (f : x ⟶ y) :
 def pairSectionMap {x y} (f : x ⟶ y) :
     pairSectionObj h x ⟶ pairSectionObj h y :=
   homMk f (pairSectionMapFiber h f)
+
+@[simp] theorem pairSectionMap_base {x y} (f : x ⟶ y) :
+    (pairSectionMap h f).base = f :=
+  rfl
 
 @[simp] theorem pairSectionMap_fiber_base {x y} (f : x ⟶ y) :
     (pairSectionMap h f).fiber.base = mapPoint α f :=
@@ -364,8 +374,8 @@ theorem pairSectionMap_comp_fiber_base {x y z} (f : x ⟶ y) (g : y ⟶ z) :
     pairSectionMap, mapPoint, pairSectionMapFiber]
 
 theorem pairSectionMap_comp_fiber_fiber_aux {x y z} (f : x ⟶ y) (g : y ⟶ z) :
-  (B.map ((ι _ (pairSectionObj h z).base).map (mapPoint α (f ≫ g)))).obj
-      ((sigmaMap B (pairSectionMap h (f ≫ g)).base).obj (pairSectionObj h x).fiber).fiber =
+  (B.map ((ι _ z).map (mapPoint α (f ≫ g)))).obj
+      ((sigmaMap B (f ≫ g)).obj (pairSectionObj h x).fiber).fiber =
     (B.map ((sec _ α rfl).map g)).obj
       ((B.map ((sec _ α rfl).map f)).obj (objPt' h x)) := by
   have h1 : B.map ((sec _ α rfl).map f) ⋙ B.map ((sec _ α rfl).map g)
@@ -472,7 +482,7 @@ theorem pairSectionMap_comp {x y z} (f : x ⟶ y) (g : y ⟶ z) :
   · simp [pairSectionMap_comp_fiber]
   · rfl
 
-def pairSection : Γ ⥤ ∫(sigma (α ⋙ forgetToGrpd) B) where
+@[simps] def pairSection : Γ ⥤ ∫(sigma (α ⋙ forgetToGrpd) B) where
     obj := pairSectionObj h
     map := pairSectionMap h
     map_id := pairSectionMap_id _
@@ -489,6 +499,20 @@ def pair : Γ ⥤ PGrpd.{v₁,u₁} := pairSection h ⋙ toPGrpd _
 
 section
 
+section
+variable {Δ : Type u₃} [Category.{v₃} Δ] (σ : Δ ⥤ Γ)
+
+theorem objPt_naturality (α : Γ ⥤ PGrpd) (x : Δ) :
+    objPt (σ ⋙ α) x = objPt α (σ.obj x) :=
+  rfl
+
+theorem objPt'_naturality {A : Γ ⥤ Grpd.{v₁,u₁}}
+    {α : Γ ⥤ PGrpd.{v₁,u₁}} (h : α ⋙ PGrpd.forgetToGrpd = A) (x : Δ) :
+    @objPt' _ _ (σ ⋙ A) (σ ⋙ α) (by rw [← h]; rfl) x = objPt' h (σ.obj x) :=
+  rfl
+
+end
+
 variable {Δ : Type u₃} [Category.{v₃} Δ] (σ : Δ ⥤ Γ)
 
 include h in
@@ -497,47 +521,84 @@ lemma pairSection_naturality_aux : (σ ⋙ β) ⋙ forgetToGrpd
   conv => right; erw [← Functor.assoc, ← sec_naturality]
   simp only [Functor.assoc, h]
 
--- set_option trace.pp.analyze
+lemma pairSection_naturality_obj (x) : (σ ⋙ pairSection h).obj x =
+    (pairSection (pairSection_naturality_aux h σ)
+    ⋙ map (eqToHom (sigma_naturality B σ).symm)
+    ⋙ pre (sigma (α ⋙ forgetToGrpd) B) σ).obj x := by
+  simp only [pairSection, Functor.comp_obj, pairSectionObj]
+  apply obj_ext_hEq
+  · simp [pairSection, pairSectionObj]
+  · rw [heq_eq_eq]
+    have : (ι ((σ ⋙ α) ⋙ forgetToGrpd) x ⋙ pre (α ⋙ forgetToGrpd) σ ⋙ B)
+        ⋙ Grpd.forgetToCat =
+        (ι (α ⋙ forgetToGrpd) (σ.obj x) ⋙ B) ⋙ Grpd.forgetToCat := by
+      simp only [← ιCompPre, Functor.assoc]
+    apply obj_ext_hEq
+    · simp [Grpd.eqToHom_obj, Grothendieck.cast_eq this, objPt_naturality]
+    · simp only [pairSectionObjFiber, Functor.comp_obj,
+        objMk_base, objMk_fiber,
+        objPt_naturality, pre_obj_fiber, map_obj_fiber, sigma_obj,
+        sigmaObj, ← objPt'_naturality]
+      rw! [eqToHom_app, Grpd.eqToHom_obj, Grothendieck.cast_eq this,
+        objMk_fiber, heq_eq_eq]
+
+theorem pairSection_naturality_map_base {x y} (f : x ⟶ y) :
+    ((σ ⋙ pairSection h).map f).base =
+    (eqToHom (pairSection_naturality_obj h σ x)
+      ≫ (pairSection (pairSection_naturality_aux h σ)
+        ⋙ map (eqToHom (sigma_naturality B σ).symm)
+        ⋙ pre (sigma (α ⋙ forgetToGrpd) B) σ).map f
+      ≫ eqToHom (pairSection_naturality_obj h σ y).symm).base
+    := by
+  simp
+
+lemma eqToHom_eqToHom_base {A : Γ ⥤ Grpd} {x' x y y' : ∫(A)}
+    (hx : x' = x) (hy : y = y') (f : x ⟶ y) :
+    (eqToHom hx ≫ f ≫ eqToHom hy).base =
+    eqToHom (by rw [hx]) ≫ f.base ≫ eqToHom (by rw [hy]) := by
+  simp
+
+theorem eqToHom_base_map {C D : Type*} [Category C] [Category D] {A}
+    (F : C ⥤ D) {X Y : Grothendieck A} (p : X = Y) :
+    F.map (eqToHom p).base = eqToHom (congr_arg F.obj (by rw [p])) :=
+  by simp [eqToHom_map]
+
+-- set_option maxHeartbeats 0 in
+-- set_option trace.profiler true in
+-- set_option trace.profiler.threshold 2000 in
+theorem pairSection_naturality_map_fiber {x y} (f : x ⟶ y) :
+    eqToHom (by rw [pairSection_naturality_map_base])
+    ≫ ((σ ⋙ pairSection h).map f).fiber =
+    (eqToHom (pairSection_naturality_obj h σ x)
+      ≫ (pairSection (pairSection_naturality_aux h σ)
+        ⋙ map (eqToHom (sigma_naturality B σ).symm)
+        ⋙ pre (sigma (α ⋙ forgetToGrpd) B) σ).map f
+      ≫ eqToHom (pairSection_naturality_obj h σ y).symm).fiber := by
+  sorry
+  --     simp only [comp_fiber, eqToHom_map, eqToHom_fiber, eqToHom_comp_iff, eqToHom_trans_assoc]
+  --     rw! [eqToHom_base_map]
+  --     dsimp only [Functor.comp_map, pairSection_map]
+  --     fapply Grothendieck.Groupoidal.ext
+  --     · simp only [pairSectionMap_fiber_base, Functor.comp_obj, pairSection_obj, sigma_obj, sigmaObj,
+  -- pairSectionMap_base, Functor.comp_map, sigma_map, pre_obj_base, map_obj_base, eqToHom_refl, Grpd.id_eq_id,
+  -- pre_map_base, map_map_base, pre_obj_fiber, map_obj_fiber, Functor.id_obj, pre_map_fiber, map_map_fiber,
+  -- whiskerRight_app, Functor.id_map, Category.assoc, eqToHom_trans_assoc]
+  --       rw [eqToHom_eqToHom_base]
+  --       rw! [eqToHom_app, Grpd.eqToHom_hom]
+  --       -- -- generalize_proofs
+  --       sorry
+  --     · sorry
+
 -- TODO consider changing this statement. Namely the `map (eqToHom ⋯)` part.
 theorem pairSection_naturality : σ ⋙ pairSection h =
     pairSection (pairSection_naturality_aux h σ)
     ⋙ map (eqToHom (sigma_naturality B σ).symm) ⋙ pre _ _ := by
-  apply CategoryTheory.Functor.ext
+  fapply CategoryTheory.Functor.ext
+  · apply pairSection_naturality_obj
   · intros X Y f
-    simp only [pairSection, Functor.comp_obj, Functor.comp_map, pairSectionMap, pairSectionMapFiber,
-      forgetToGrpd_obj, map_obj, sigma_obj, sigmaObj]
-    apply ext_homMk
-    -- simp [homMk]
-    -- apply Grothendieck.Groupoidal.ext
-    . --simp[comp_fiber]
-      sorry
-    . sorry
-      -- simp only [Grpd.coe_of, pre_obj_base, eqToHom_base, eqToHom_refl, comp_base, pre_map_base,
-      -- map_map_base, homMk_base, Category.comp_id, Category.id_comp]
-
-
-  · intro x
-    apply obj_ext_hEq
-    · simp [pairSection, pairSectionObj]
-    · rw [heq_eq_eq]
-      have : (ι ((σ ⋙ α) ⋙ forgetToGrpd) x ⋙ pre (α ⋙ forgetToGrpd) σ ⋙ B)
-          ⋙ Grpd.forgetToCat =
-          (ι (α ⋙ forgetToGrpd) (σ.obj x) ⋙ B) ⋙ Grpd.forgetToCat := by
-        rw [← ιCompPre]
-        rfl
-      apply obj_ext_hEq
-      -- TODO tidy this up by adding some lemmas +
-      -- block simp lemmas that simplify too far
-      · simp only [pairSection, Functor.comp_obj, pairSectionObj, objMk, pairSectionObjFiber]
-        simp only [map_obj, objMk,pairSectionObjFiber, map_obj,
-          sigma_obj, sigmaObj, pre_obj_fiber, eqToHom_app, Grpd.eqToHom_obj,
-          objPt]
-        rw! [Grothendieck.cast_eq this]
-      · simp only [pairSection, Functor.comp_obj, pairSectionObj, objMk,
-          pairSectionObjFiber, objPt, objPt', Grpd.eqToHom_obj,
-          map_obj, sigma_obj, sigmaObj, pre_obj_fiber, cast_heq_iff_heq]
-        rw! [eqToHom_app, Grpd.eqToHom_obj, Grothendieck.cast_eq this]
-        simp [Grpd.eqToHom_obj]
+    fapply Grothendieck.Groupoidal.ext
+    . apply pairSection_naturality_map_base
+    . apply pairSection_naturality_map_fiber
 
 -- TODO consider removal, see `pairSection_naturality`
 theorem map_eqToHom_toPGrpd {F G : Γ ⥤ Grpd} (h : F = G) :
@@ -634,7 +695,9 @@ theorem assoc_forget : assoc B ⋙ forget = fst' B := by
   dsimp [assoc, fst']
   apply Functor.hext
   · intro p
-    simp [ι_obj]
+    apply obj_ext_hEq
+    · simp
+    · simp
   · intro p q h
     simp only [heq_eq_eq]
     apply Grothendieck.Groupoidal.ext
