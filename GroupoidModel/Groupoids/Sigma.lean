@@ -264,6 +264,9 @@ def pairSectionObj (x : Γ) : ∫(sigma (α ⋙ forgetToGrpd) B) :=
 
 section
 
+@[simp] def pairSectionObj_base (x : Γ) : (pairSectionObj h x).base = x :=
+  rfl
+
 /--
   sigma A B x  ∋ pairSectionObjFiber h x
   |
@@ -606,7 +609,7 @@ theorem pairSection_naturality_map_fiber {x y} (f : x ⟶ y) :
         map_map_fiber, Functor.id_map, Category.assoc, eqToHom_trans_assoc, pairSection_obj]
         rw [eqToHom_eqToHom_base]
         simp [pairSectionObj, pairSectionMap, pairSectionMapFiber, mapPoint']
-        --rw[eqToHom_app (Eq.symm (sigma_naturality B σ)) y]
+        rw! [eqToHom_app (Eq.symm (sigma_naturality B σ)) y]
         --Pointed.congr_point?
         -- Grpd.eqToHom_hom
         sorry
@@ -614,7 +617,7 @@ theorem pairSection_naturality_map_fiber {x y} (f : x ⟶ y) :
         pairSectionMap, homMk_fiber, pairSectionMapFiber]
         --rw! [eqToHom_eqToHom_fiber]
         sorry
-
+#check Grpd.eqToHom_h
 -- TODO consider changing this statement. Namely the `map (eqToHom ⋯)` part.
 theorem pairSection_naturality : σ ⋙ pairSection h =
     pairSection (pairSection_naturality_aux h σ)
