@@ -560,11 +560,6 @@ lemma eqToHom_eqToHom_base {A : Γ ⥤ Grpd} {x' x y y' : ∫(A)}
 variable {A : Γ ⥤ Grpd}{x' x y y' : ∫(A)}
     (hx : x' = x) (hy : y = y') (f : x ⟶ y)
 
-#check (eqToHom hx ≫ f ≫ eqToHom hy).fiber
-#check (A.map f.base ≫ (A.map (eqToHom hy).base)).map (eqToHom hx).fiber
-#check (eqToHom hy).fiber
-#check (A.map (eqToHom hy).base).map f.fiber
-
 -- lemma eqToHom_eqToHom_fiber_aux {A : Γ ⥤ Grpd} {x' x y y' : ∫(A)}
 --     (hx : x' = x) (hy : y = y') (f : x ⟶ y) :
 --     ((A ⋙ Grpd.forgetToCat).map (eqToHom hx ≫ f ≫ eqToHom hy).base).obj x'.fiber =
@@ -590,8 +585,8 @@ theorem eqToHom_base_map {C D : Type*} [Category C] [Category D] {A}
 set_option maxHeartbeats 0 in
 
 
-set_option trace.profiler true in
-set_option trace.profiler.threshold 3000 in
+-- set_option trace.profiler true in
+-- set_option trace.profiler.threshold 3000 in
 theorem pairSection_naturality_map_fiber {x y} (f : x ⟶ y) :
     eqToHom (by rw [pairSection_naturality_map_base])
     ≫ ((σ ⋙ pairSection h).map f).fiber =
